@@ -844,7 +844,7 @@ function draw(){
   };
 
   const supplier = {
-    x: warehouse.x + facilityWidth + 160,
+    x: canvas.width - facilityWidth - 250,
     y: facilityY,
     w: facilityWidth,
     h: facilityHeight,
