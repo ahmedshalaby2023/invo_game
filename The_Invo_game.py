@@ -11,7 +11,7 @@ if "game_reset_token" not in st.session_state:
     st.session_state.game_reset_token = 0
 
 SCENARIO_OPTIONS = ["Accurate forecast", "Biased forecast"]
-SPEED_OPTIONS = ["minute", "second"]
+SPEED_OPTIONS = ["minute", "10-second", "second"]
 
 st.markdown(
     """
@@ -536,8 +536,17 @@ function updatePlanningTargets(targetState){
 
 // Time scaling (all durations are expressed in simulation time units; 1 unit = 1 in-game day)
 let base_interval_ms = 120;
-let time_factor = (params.speed_unit === "second") ? 60.0 : 1.0;
-let time_units_per_step = (base_interval_ms / 60000.0) * time_factor;
+const speedFactorMap = {
+  minute: 1.0,
+  "10-second": 6.0,
+  second: 60.0,
+};
+
+function resolveSpeedFactor(unit){
+  return speedFactorMap[unit] || speedFactorMap.minute;
+}
+
+let time_units_per_step = (base_interval_ms / 60000.0) * resolveSpeedFactor(params.speed_unit);
 
 // Utility calculations (mirror python logic)
 function production_requirement_per_time_unit(){
@@ -1346,7 +1355,7 @@ function handleExternalActions(){
 }
 
 // update minutes_per_step whenever speed_unit changes
-minutes_per_step = (base_interval_ms / 60000.0) * (params.speed_unit === 'second' ? 60.0 : 1.0);
+time_units_per_step = (base_interval_ms / 60000.0) * resolveSpeedFactor(params.speed_unit);
 
 // animation loop
 let intervalId = null;
