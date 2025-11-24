@@ -844,13 +844,13 @@ function draw(){
   };
 
   const supplier = {
-    x: canvas.width - facilityWidth - 250,
+    x: warehouse.x + facilityWidth + 160,
     y: facilityY,
     w: facilityWidth,
     h: facilityHeight,
     color: '#bbdefb',
-    stroke: '#64b5f6',
-    label: 'Supplier',
+    stroke: '#8bc34a',
+    label: 'Farm',
   };
 
   const secondaryY = facilityY + facilityHeight + 120;
@@ -876,12 +876,11 @@ function draw(){
   const vaporPhase = timeNow * 0.002;
   draw_factory_machine(factory, vaporPhase);
 
-  [warehouse, supplier].forEach(f =>{
-    ctx.fillStyle = f.color; ctx.strokeStyle = f.stroke; ctx.lineWidth = 2;
-    roundRect(ctx, f.x, f.y, f.w, f.h, 8, true, true);
-    ctx.fillStyle = '#333'; ctx.font='bold 12px Segoe UI';
-    ctx.fillText(f.label, f.x + f.w/2 - ctx.measureText(f.label).width/2, f.y + f.h + 18);
-  });
+  // Draw warehouse with detailed appearance
+  draw_warehouse(warehouse);
+  
+  // Draw farm (supplier)
+  draw_farm(supplier);
 
   draw_supermarket(supermarket);
 
@@ -911,16 +910,14 @@ function draw(){
   const chilledY = dcDock.y + (supermarketDock.y - dcDock.y) * chilledProgress;
   draw_chilled_truck(chilledX, chilledY, state.chilled_truck_direction);
 
-  // draw stock blocks in each facility
-  ctx.fillStyle = '#e3f2fd'; ctx.strokeStyle = "#42a5f5";
-  roundRect(ctx, dc_coords.x, dc_coords.y, dc_coords.w, dc_coords.h, 10, true, true);
+  // Draw DC building with detailed appearance
+  draw_dc(dc_coords);
+  
+  // Draw stock blocks in facilities
   draw_stock_blocks(factory, state.factory_stock, state.high_stock_threshold, '#66bb6a');
   draw_stock_blocks(warehouse, state.warehouse_stock, state.high_stock_threshold, '#ffa726', state.safety_stock, compute_reorder_point());
   draw_stock_blocks(dc_coords, state.finished_goods_stock, state.fg_high_stock_threshold, '#42a5f5', state.fg_safety_stock);
   draw_money_particles(state.money_particles);
-  draw_flag(dc_coords, determine_flag(state.finished_goods_stock, state.fg_safety_stock, null, state.fg_high_stock_threshold), 'center');
-  ctx.fillStyle = '#1e88e5'; ctx.font = 'bold 13px Segoe UI';
-  ctx.fillText('DC: ' + Math.round(state.finished_goods_stock) + ' u', dc_coords.x + 16, dc_coords.y - 10);
 
   // flags
   draw_flag(factory, determine_flag(state.factory_stock, state.safety_stock, null, null), 'left');
@@ -944,9 +941,10 @@ function draw(){
 
   // truck (between supplier and warehouse)
   let truckProgress = state.truck_en_route && state.truck_wait_timer <= 0 ? state.truck_progress : 0.0;
-  const supplierCenter = {x: supplier.x + supplier.w/2, y: supplier.y + supplier.h/2};
+  const supplierCenter = {x: supplier.x + supplier.w/2, y: supplier.y + supplier.h};
+  const warehouseTruckY = warehouse.y + warehouse.h - 10; // Align with bottom of warehouse
   const truckX = supplierCenter.x + (warehouseCenter.x - supplierCenter.x) * truckProgress;
-  const truckY = supplierCenter.y - 10;
+  const truckY = supplierCenter.y + (warehouseTruckY - supplierCenter.y) * truckProgress;
   draw_truck(truckX, truckY, state.truck_en_route, state.truck_wait_timer, state.truck_delivery, state.truck_travel_minutes_remaining);
 
   // HUD update
@@ -1259,6 +1257,276 @@ function draw_factory_vapor(origin, phase){
     ctx.fill();
     ctx.restore();
   }
+}
+
+function draw_warehouse(warehouse) {
+  const {x, y, w, h} = warehouse;
+  
+  // Draw main building
+  ctx.fillStyle = '#ffe0b2';
+  ctx.strokeStyle = '#ffb74d';
+  ctx.lineWidth = 2;
+  roundRect(ctx, x, y, w, h, 8, true, true);
+  
+  // Draw roof
+  const roofHeight = 20;
+  const roofY = y - roofHeight;
+  ctx.fillStyle = '#bdbdbd';
+  ctx.strokeStyle = '#9e9e9e';
+  ctx.beginPath();
+  ctx.moveTo(x - 10, y);
+  ctx.lineTo(x + w/2, roofY);
+  ctx.lineTo(x + w + 10, y);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+  
+  // Draw roof details
+  ctx.strokeStyle = '#9e9e9e';
+  ctx.lineWidth = 1.5;
+  // Roof ridge
+  ctx.beginPath();
+  ctx.moveTo(x + w/2, roofY);
+  ctx.lineTo(x + w/2, y);
+  ctx.stroke();
+  
+  // Draw loading doors
+  const doorWidth = 30;
+  const doorHeight = h * 0.6;
+  const doorY = y + (h - doorHeight) / 2;
+  
+  // Left door
+  ctx.fillStyle = '#bdbdbd';
+  ctx.strokeStyle = '#9e9e9e';
+  roundRect(ctx, x + 20, doorY, doorWidth, doorHeight, 4, true, true);
+  
+  // Right door
+  roundRect(ctx, x + w - 20 - doorWidth, doorY, doorWidth, doorHeight, 4, true, true);
+  
+  // Door details
+  ctx.strokeStyle = '#8d6e63';
+  ctx.lineWidth = 1.5;
+  // Left door lines
+  ctx.beginPath();
+  ctx.moveTo(x + 20 + doorWidth/2, doorY + 5);
+  ctx.lineTo(x + 20 + doorWidth/2, doorY + doorHeight - 5);
+  ctx.stroke();
+  // Right door lines
+  ctx.beginPath();
+  ctx.moveTo(x + w - 20 - doorWidth/2, doorY + 5);
+  ctx.lineTo(x + w - 20 - doorWidth/2, doorY + doorHeight - 5);
+  ctx.stroke();
+  
+  // Windows
+  const windowSize = 20;
+  const windowY = y + 15;
+  // Left window
+  ctx.fillStyle = '#e3f2fd';
+  ctx.strokeStyle = '#90caf9';
+  roundRect(ctx, x + 30, windowY, windowSize, windowSize, 3, true, true);
+  // Right window
+  roundRect(ctx, x + w - 30 - windowSize, windowY, windowSize, windowSize, 3, true, true);
+  
+  // Window details
+  ctx.strokeStyle = '#90caf9';
+  ctx.lineWidth = 1;
+  // Left window cross
+  ctx.beginPath();
+  // Horizontal line
+  ctx.moveTo(x + 30, windowY + windowSize/2);
+  ctx.lineTo(x + 30 + windowSize, windowY + windowSize/2);
+  // Vertical line
+  ctx.moveTo(x + 30 + windowSize/2, windowY);
+  ctx.lineTo(x + 30 + windowSize/2, windowY + windowSize);
+  ctx.stroke();
+  
+  // Right window cross
+  ctx.beginPath();
+  // Horizontal line
+  ctx.moveTo(x + w - 30 - windowSize, windowY + windowSize/2);
+  ctx.lineTo(x + w - 30, windowY + windowSize/2);
+  // Vertical line
+  ctx.moveTo(x + w - 30 - windowSize/2, windowY);
+  ctx.lineTo(x + w - 30 - windowSize/2, windowY + windowSize);
+  ctx.stroke();
+  
+  // Draw label
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 12px Segoe UI';
+  ctx.fillText(warehouse.label, x + w/2 - ctx.measureText(warehouse.label).width/2, y + h + 18);
+}
+
+function draw_dc(dc) {
+  const {x, y, w, h} = dc;
+  
+  // Draw main building
+  ctx.fillStyle = '#e3f2fd';
+  ctx.strokeStyle = '#42a5f5';
+  ctx.lineWidth = 2;
+  roundRect(ctx, x, y, w, h, 10, true, true);
+  
+  // Draw roof
+  const roofHeight = 15;
+  const roofY = y - roofHeight;
+  ctx.fillStyle = '#90caf9';
+  ctx.strokeStyle = '#64b5f6';
+  roundRect(ctx, x - 5, roofY, w + 10, roofHeight + 5, 6, true, true);
+  
+  // Draw loading dock
+  const dockHeight = 12;
+  const dockY = y + h - dockHeight;
+  ctx.fillStyle = '#bdbdbd';
+  ctx.fillRect(x + 20, dockY, w - 40, dockHeight);
+  
+  // Draw dock doors
+  const doorWidth = 25;
+  const doorSpacing = 10;
+  const doorY = dockY - 8;
+  const doorHeight = 20;
+  
+  // Draw multiple dock doors
+  const doorCount = 3;
+  const totalDoorsWidth = (doorWidth * doorCount) + (doorSpacing * (doorCount - 1));
+  const startX = x + (w - totalDoorsWidth) / 2;
+  
+  for (let i = 0; i < doorCount; i++) {
+    const doorX = startX + (i * (doorWidth + doorSpacing));
+    
+    // Door frame
+    ctx.fillStyle = '#78909c';
+    ctx.fillRect(doorX - 2, doorY - 2, doorWidth + 4, doorHeight + 4);
+    
+    // Door
+    ctx.fillStyle = '#455a64';
+    ctx.fillRect(doorX, doorY, doorWidth, doorHeight);
+    
+    // Door handle
+    ctx.fillStyle = '#ffd54f';
+    ctx.fillRect(doorX + doorWidth - 6, doorY + doorHeight/2 - 2, 3, 4);
+    
+    // Dock leveler
+    ctx.fillStyle = '#9e9e9e';
+    ctx.fillRect(doorX - 3, dockY - 2, doorWidth + 6, 3);
+  }
+  
+  // Draw DC sign - adjusted to better fit the text
+  const signText = 'DISTRIBUTION';
+  const signPadding = 15; // Increased padding
+  const signHeight = 22; // Slightly reduced height
+  
+  // Calculate text width and set sign width
+  ctx.font = 'bold 14px Arial';
+  const textMetrics = ctx.measureText(signText);
+  const signWidth = Math.max(80, textMetrics.width + signPadding * 2); // Ensure minimum width of 80
+  
+  const signX = x + (w - signWidth) / 2;
+  const signY = y + 20;
+  
+  // Sign background with shadow for depth
+  ctx.shadowColor = 'rgba(0,0,0,0.2)';
+  ctx.shadowBlur = 4;
+  ctx.shadowOffsetY = 2;
+  ctx.fillStyle = '#1565c0';
+  roundRect(ctx, signX, signY, signWidth, signHeight, 4, true, true);
+  ctx.shadowBlur = 0; // Reset shadow
+  
+  // DC text with better positioning
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(signText, x + w/2, signY + signHeight/2 + 1); // +1 for better vertical centering
+  
+  // Stock label
+  ctx.fillStyle = '#1e88e5'; 
+  ctx.font = 'bold 13px Segoe UI';
+  ctx.textAlign = 'left';
+  ctx.textBaseline = 'alphabetic';
+  ctx.fillText('DC: ' + Math.round(state.finished_goods_stock) + ' u', x + 16, y - 10);
+  
+  // Draw flag
+  draw_flag(dc, determine_flag(state.finished_goods_stock, state.fg_safety_stock, null, state.fg_high_stock_threshold), 'center');
+}
+
+function draw_farm(farm) {
+  const {x, y, w, h} = farm;
+  
+  // Draw green field
+  ctx.fillStyle = '#8bc34a';
+  roundRect(ctx, x, y, w, h, 8, true, true);
+  
+  // Draw fence
+  ctx.fillStyle = '#8d6e63';
+  const fenceHeight = 20;
+  const fenceY = y + h - fenceHeight - 20;
+  
+  // Horizontal rails
+  ctx.fillRect(x, fenceY, w, 5);
+  ctx.fillRect(x, fenceY + 15, w, 5);
+  
+  // Vertical posts
+  const postSpacing = 20;
+  for (let i = 0; i <= w; i += postSpacing) {
+    ctx.fillRect(x + i, fenceY, 3, fenceHeight);
+  }
+  
+  // Draw cows
+  const drawCow = (cx, cy, size) => {
+    // Body
+    ctx.fillStyle = '#f5f5f5';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.6, size * 0.4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = '#9e9e9e';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    
+    // Head
+    ctx.beginPath();
+    ctx.ellipse(cx - size * 0.5, cy - size * 0.1, size * 0.3, size * 0.25, 0, -Math.PI/4, Math.PI/4, true);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Ears
+    ctx.beginPath();
+    ctx.ellipse(cx - size * 0.6, cy - size * 0.2, size * 0.1, size * 0.15, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    
+    // Spots
+    ctx.fillStyle = '#9e9e9e';
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, size * 0.2, size * 0.1, Math.PI/4, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  
+  // Draw multiple cows
+  const cowCount = 3;
+  for (let i = 0; i < cowCount; i++) {
+    const cowX = x + 30 + (i * 40);
+    const cowY = y + h - 50 - (i % 2 * 15);
+    drawCow(cowX, cowY, 25);
+  }
+  
+  // Draw barn
+  ctx.fillStyle = '#c62828';
+  ctx.beginPath();
+  ctx.moveTo(x + w/2, y + 20);
+  ctx.lineTo(x + w - 20, y + h/2);
+  ctx.lineTo(x + 20, y + h/2);
+  ctx.closePath();
+  ctx.fill();
+  
+  ctx.fillStyle = '#5d4037';
+  ctx.fillRect(x + 20, y + h/2, w - 40, 10);
+  
+  // Draw barn door
+  ctx.fillStyle = '#8d6e63';
+  ctx.fillRect(x + w/2 - 10, y + h/2, 20, 15);
+  
+  // Draw label
+  ctx.fillStyle = '#333';
+  ctx.font = 'bold 12px Segoe UI';
+  ctx.fillText(farm.label, x + w/2 - ctx.measureText(farm.label).width/2, y + h + 18);
 }
 
 function draw_supermarket(supermarket){
