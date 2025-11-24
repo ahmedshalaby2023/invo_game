@@ -144,19 +144,92 @@ html_template = """
 <!doctype html>
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <style>
-  * { box-sizing:border-box; }
-  body { margin:0; min-height:100vh; display:flex; justify-content:center; align-items:flex-start; background:radial-gradient(120% 140% at 50% -10%, #142c56 0%, #081223 58%, #030811 100%); font-family:'Rajdhani', 'Segoe UI', sans-serif; color:#e4ecff; padding:28px 12px; }
-  .game-shell { width:min(100%, 1480px); background:linear-gradient(150deg, rgba(12,32,62,0.95), rgba(19,46,92,0.78)); border:1px solid rgba(130,201,255,0.32); border-radius:26px; padding:24px 28px 26px; box-shadow:0 26px 70px rgba(2,12,28,0.65); position:relative; overflow:hidden; isolation:isolate; }
+  * { box-sizing:border-box; -webkit-tap-highlight-color: transparent; }
+  body { 
+    margin:0; 
+    min-height:100vh; 
+    display:flex; 
+    justify-content:center; 
+    align-items:flex-start; 
+    background:radial-gradient(120% 140% at 50% -10%, #142c56 0%, #081223 58%, #030811 100%); 
+    font-family:'Rajdhani', 'Segoe UI', sans-serif; 
+    color:#e4ecff; 
+    padding:12px; 
+    -webkit-text-size-adjust: 100%;
+  }
+  @media (min-width: 768px) {
+    body { padding: 28px 12px; }
+  }
+  .game-shell { 
+    width: 100%;
+    max-width: 1480px;
+    background:linear-gradient(150deg, rgba(12,32,62,0.95), rgba(19,46,92,0.78)); 
+    border:1px solid rgba(130,201,255,0.32); 
+    border-radius:16px; 
+    padding:16px; 
+    box-shadow:0 16px 40px rgba(2,12,28,0.65); 
+    position:relative; 
+    overflow:hidden; 
+    isolation:isolate; 
+  }
+  @media (min-width: 768px) {
+    .game-shell {
+      padding: 24px 28px 26px;
+      border-radius: 26px;
+    }
+  }
 
   .game-shell::before { content:""; position:absolute; inset:-120px -140px auto auto; width:320px; height:320px; background:radial-gradient(circle at center, rgba(123,201,255,0.42) 0%, rgba(123,201,255,0.08) 70%, transparent 100%); z-index:-1; filter:blur(2px); }
   #hud { display:flex; flex-direction:column; gap:16px; }
   .hud-header { display:flex; justify-content:space-between; align-items:center; gap:12px; padding-bottom:4px; border-bottom:1px solid rgba(123,201,255,0.18); margin-bottom:18px; }
   .hud-title { font-size:1.05rem; letter-spacing:0.18em; text-transform:uppercase; font-weight:700; color:#9fd2ff; text-shadow:0 0 18px rgba(144,202,249,0.45); }
   .hud-live-badge { padding:5px 14px; border-radius:999px; border:1px solid rgba(144,202,249,0.5); background:rgba(28,63,122,0.55); font-size:0.72rem; letter-spacing:0.24em; font-weight:600; color:#e3f2fd; box-shadow:0 0 14px rgba(79,195,247,0.45); }
-  .game-layout { display:flex; align-items:stretch; justify-content:center; }
-  .hud-column { display:none; }
-
+  #game-canvas { 
+    width:100%; 
+    max-width:100%; 
+    height: auto;
+    max-height: 80vh;
+    aspect-ratio: 16/9; 
+    background:rgba(0,0,0,0.1); 
+    border-radius:8px; 
+    margin:0 auto; 
+    display:block; 
+    image-rendering: -webkit-optimize-contrast;
+    image-rendering: crisp-edges;
+    touch-action: none;
+  }
+  .metrics { 
+    display:grid; 
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px; 
+    margin: 16px 0 0; 
+    padding:0; 
+    list-style:none; 
+  }
+  .metrics li { 
+    background:rgba(2,12,28,0.4); 
+    border:1px solid rgba(130,201,255,0.16); 
+    border-radius:8px; 
+    padding:10px 8px; 
+    text-align:center; 
+    font-size: 0.85rem;
+  }
+  @media (min-width: 768px) {
+    #game-canvas {
+      border-radius: 12px;
+    }
+    .metrics {
+      grid-template-columns: repeat(5, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .metrics li {
+      padding: 14px 12px;
+      font-size: 1rem;
+    }
+  }
   .metric-card { display:flex; align-items:center; gap:12px; padding:12px 16px; border-radius:16px; border:1px solid rgba(123,201,255,0.24); background:linear-gradient(140deg, rgba(23,54,108,0.78), rgba(26,62,120,0.58)); box-shadow:inset 0 0 0 1px rgba(174,221,255,0.12), 0 14px 24px rgba(4,12,26,0.45); transition:transform 0.2s ease, box-shadow 0.2s ease; position:relative; overflow:hidden; }
   .metric-card::after { content:""; position:absolute; inset:4px 18px auto auto; width:38px; height:38px; border-radius:50%; background:radial-gradient(circle at 30% 30%, rgba(255,255,255,0.55), rgba(79,195,247,0)); opacity:0.18; pointer-events:none; }
   .metric-card .icon { font-size:1.2rem; filter:drop-shadow(0 4px 8px rgba(79,195,247,0.35)); }
